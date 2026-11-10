@@ -30,7 +30,8 @@ async function callMistralAI(promptText) {
     const response = await axios.post(
       'https://integrate.api.nvidia.com/v1/chat/completions',
       {
-        model: "mistralai/mistral-large-4-1t-a52b",
+        model: "meta/llama-3.1-8b-instruct",
+        
         messages: [
           {
             role: "system",
