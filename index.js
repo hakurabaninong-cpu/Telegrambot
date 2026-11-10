@@ -1,20 +1,20 @@
 const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
-const axios = require('axios');
+const { GoogleGenAI } = require('@google/genai');
 
 // 1. Web server para sa Render.com
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-  res.send('Telegram AI Bot is Running!');
+  res.send('Telegram Gemini Video Editor Bot is Running!');
 });
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-// 2. Initialize Telegram Bot na may polling settings para iwas 409 Conflict
+// 2. Initialize Telegram Bot na may malinis na polling settings para iwas 409 Conflict
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { 
   polling: {
@@ -24,56 +24,45 @@ const bot = new TelegramBot(token, {
   } 
 });
 
-// 3. Function para tawagin ang Mistral Large 4 kasama ang System Prompt para sa FFmpeg/Node.js
-async function callMistralAI(promptText) {
+// 3. Initialize Gemini SDK
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+async function callGeminiAI(promptText) {
   try {
-    const response = await axios.post(
-      'https://integrate.api.nvidia.com/v1/chat/completions',
-      {
-        model: "nvidia/nemotron-3-8b-instruct",
-        
-        messages: [
-          {
-            role: "system",
-            content: "Ikaw ay isang matalinong Telegram Video Editor Bot. Mayroon kang FFmpeg at Node.js na naka-install sa iyong paligid (server container). Kaya mong tumulong mag-edit, mag-convert, at mag-proseso ng mga video gamit ang FFmpeg commands at Node.js."
-          },
-          {
-            role: "user",
-            content: promptText
-          }
-        ],
-        max_tokens: 512, // Binabaan para mas bumilis ang pag-generate
-        temperature: 0.5
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
-          'Content-Type': 'application/json'
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: "Ikaw ay isang matalinong Telegram Video Editor AI Assistant. Mayroon kang FFmpeg at Node.js sa server. Tulungan ang user na mag-isip ng magandang screentext, font styles, at mga opinyon sa pag-e-edit ng video.\n\nUser Prompt: " + promptText
+            }
+          ]
         }
-      }
-    );
-    return response.data.choices[0].message.content;
+      ]
+    });
+    return response.text;
   } catch (error) {
-    console.error("NVIDIA API Error:", error.response ? error.response.data : error.message);
-    return "Pasensya na, nagka-error sa pagproseso ng AI.";
+    console.error("Gemini API Error:", error);
+    return "Pasensya na, may suliranin sa pagproseso ng Gemini AI.";
   }
 }
 
 // 4. Telegram Event Listeners
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, "Mabuhay! Handa na ang iyong Video Editor Bot. Magpadala ng mensahe.");
+  bot.sendMessage(chatId, "Mabuhay! Handa na ang iyong Gemini Video Editor Bot. Magpadala ng mensahe o tanong tungkol sa screentext at video editing.");
 });
 
-// Isang malinis at pinag-isang message handler
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   
   if (msg.text && !msg.text.startsWith('/start')) {
     bot.sendMessage(chatId, "Nag-isip ang AI...");
-    const aiReply = await callMistralAI(msg.text);
+    const aiReply = await callGeminiAI(msg.text);
     
-    // Siguraduhing may laman ang aiReply bago i-send sa Telegram para iwas 400 Bad Request
+    // Proteksyon para hindi mag-send ng empty message
     if (aiReply && aiReply.trim() !== "") {
       bot.sendMessage(chatId, aiReply);
     } else {
