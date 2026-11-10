@@ -2,7 +2,6 @@ const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
 const { GoogleGenAI } = require('@google/genai');
 
-// 1. Web server para sa Render.com
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -14,7 +13,6 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-// 2. Initialize Telegram Bot na may malinis na polling settings para iwas 409 Conflict
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { 
   polling: {
@@ -24,23 +22,13 @@ const bot = new TelegramBot(token, {
   } 
 });
 
-// 3. Initialize Gemini SDK
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 async function callGeminiAI(promptText) {
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: "Ikaw ay isang matalinong Telegram Video Editor AI Assistant. Mayroon kang FFmpeg at Node.js sa server. Tulungan ang user na mag-isip ng magandang screentext, font styles, at mga opinyon sa pag-e-edit ng video.\n\nUser Prompt: " + promptText
-            }
-          ]
-        }
-      ]
+      contents: promptText
     });
     return response.text;
   } catch (error) {
@@ -49,19 +37,16 @@ async function callGeminiAI(promptText) {
   }
 }
 
-// 4. Telegram Event Listeners
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, "Mabuhay! Handa na ang iyong Gemini Video Editor Bot. Magpadala ng mensahe o tanong tungkol sa screentext at video editing.");
+  bot.sendMessage(chatId, "Mabuhay! Handa na ang iyong Gemini Video Editor Bot.");
 });
 
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
-  
   if (msg.text && !msg.text.startsWith('/start')) {
     bot.sendMessage(chatId, "Nag-isip ang AI...");
     const aiReply = await callGeminiAI(msg.text);
-    
     if (aiReply && aiReply.trim() !== "") {
       bot.sendMessage(chatId, aiReply);
     } else {
