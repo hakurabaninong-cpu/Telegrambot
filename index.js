@@ -1,12 +1,12 @@
 const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
-const { GoogleGenAI } = require('@google/genai');
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-  res.send('Telegram Gemini Video Editor Bot is Running!');
+  res.send('Telegram Bot is Running!');
 });
 
 app.listen(PORT, () => {
@@ -22,31 +22,36 @@ const bot = new TelegramBot(token, {
   } 
 });
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-async function callGeminiAI(promptText) {
+async function callGeminiDirect(promptText) {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: promptText
-    });
-    return response.text;
+    const apiKey = process.env.GEMINI_API_KEY;
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        contents: [
+          {
+            parts: [{ text: "Ikaw ay isang matalinong Telegram Video Editor AI Assistant. Tulungan ang user na mag-isip ng magandang screentext, font styles, at mga opinyon sa pag-e-edit ng video.\n\nUser: " + promptText }]
+          }
+        ]
+      }
+    );
+    return response.data.candidates[0].content.parts[0].text;
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "Pasensya na, may suliranin sa pagproseso ng Gemini AI.";
+    console.error("API Error:", error.response ? error.response.data : error.message);
+    return "Pasensya na, nagka-error sa pagproseso ng AI.";
   }
 }
 
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, "Mabuhay! Handa na ang iyong Gemini Video Editor Bot.");
+  bot.sendMessage(chatId, "Mabuhay! Handa na ang iyong Video Editor Bot.");
 });
 
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   if (msg.text && !msg.text.startsWith('/start')) {
     bot.sendMessage(chatId, "Nag-isip ang AI...");
-    const aiReply = await callGeminiAI(msg.text);
+    const aiReply = await callGeminiDirect(msg.text);
     if (aiReply && aiReply.trim() !== "") {
       bot.sendMessage(chatId, aiReply);
     } else {
