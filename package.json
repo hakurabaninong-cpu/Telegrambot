@@ -1,15 +1,14 @@
 {
   "name": "telegram-bot",
   "version": "1.0.0",
-  "description": "Telegram Gemini Video Editor Bot",
+  "description": "Telegram Video Editor Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@google/genai": "^0.1.1",
-    "axios": "^1.6.0",
     "express": "^4.19.2",
-    "node-telegram-bot-api": "^0.66.0"
+    "node-telegram-bot-api": "^0.66.0",
+    "axios": "^1.6.0"
   }
 }
