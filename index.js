@@ -63,3 +63,19 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, aiReply);
   }
 });
+
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  
+  if (msg.text && !msg.text.startsWith('/start')) {
+    bot.sendMessage(chatId, "Nag-isip ang AI...");
+    const aiReply = await callMistralAI(msg.text);
+    
+    // Siguraduhing may laman ang aiReply bago i-send sa Telegram
+    if (aiReply && aiReply.trim() !== "") {
+      bot.sendMessage(chatId, aiReply);
+    } else {
+      bot.sendMessage(chatId, "Pasensya na, walang naibalik na sagot ang AI.");
+    }
+  }
+});
