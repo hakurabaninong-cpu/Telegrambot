@@ -62,7 +62,6 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, "Nag-isip ang AI...");
     const aiReply = await callGeminiAI(msg.text);
     
-    // Proteksyon para hindi mag-send ng empty message
     if (aiReply && aiReply.trim() !== "") {
       bot.sendMessage(chatId, aiReply);
     } else {
