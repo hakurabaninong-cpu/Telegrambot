@@ -24,7 +24,7 @@ const bot = new TelegramBot(token, {
   } 
 });
 
-// 3. Function para tawagin ang Mistral Large 4 sa pamamagitan ng NVIDIA API
+// 3. Function para tawagin ang Mistral Large 4 kasama ang System Prompt para sa FFmpeg/Node.js
 async function callMistralAI(promptText) {
   try {
     const response = await axios.post(
@@ -33,11 +33,15 @@ async function callMistralAI(promptText) {
         model: "mistralai/mistral-large-4-1t-a52b",
         messages: [
           {
+            role: "system",
+            content: "Ikaw ay isang matalinong Telegram Video Editor Bot. Mayroon kang FFmpeg at Node.js na naka-install sa iyong paligid (server container). Kaya mong tumulong mag-edit, mag-convert, at mag-proseso ng mga video gamit ang FFmpeg commands at Node.js."
+          },
+          {
             role: "user",
             content: promptText
           }
         ],
-        max_tokens: 512, // Binabaan ko nang kaunti para mas bumilis ang pag-generate
+        max_tokens: 512, // Binabaan para mas bumilis ang pag-generate
         temperature: 0.5
       },
       {
@@ -57,10 +61,10 @@ async function callMistralAI(promptText) {
 // 4. Telegram Event Listeners
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, "Mabuhay! Handa na ang iyong Mistral AI Bot. Magpadala ng mensahe.");
+  bot.sendMessage(chatId, "Mabuhay! Handa na ang iyong Video Editor Bot. Magpadala ng mensahe.");
 });
 
-// Isang malinis at pinag-isang message handler na lang (tinanggal ang dobleng code)
+// Isang malinis at pinag-isang message handler
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   
